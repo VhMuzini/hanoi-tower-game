@@ -30,6 +30,18 @@ npm install
 npm run build   # ou: npm run watch
 ```
 
+## Deploy na Vercel
+
+O projeto é 100% estático (o `dist/main.js` já vem compilado e versionado), então não precisa de build na Vercel:
+
+1. Importe o repositório em https://vercel.com/new.
+2. Framework preset: **Other**.
+3. Build Command e Install Command: deixe em branco (já configurados como `null` no `vercel.json`).
+4. Output Directory: raiz do projeto (já configurado no `vercel.json`).
+5. Deploy.
+
+Se alterar `src/main.ts`, rode `npm run build` localmente e faça commit do `dist/main.js` atualizado antes do próximo deploy.
+
 ## Estrutura
 
 ```
@@ -38,6 +50,8 @@ style.css       # estilos
 src/main.ts     # lógica do jogo e renderização (TypeScript)
 dist/main.js    # saída compilada (ES module), usada pelo index.html
 tsconfig.json   # configuração do compilador TypeScript
+vercel.json     # configuração de deploy estático na Vercel
+.vercelignore   # arquivos de dev excluídos do deploy
 ```
 
 ## Licença
