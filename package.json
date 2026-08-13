@@ -1,0 +1,16 @@
+{
+  "name": "hanoi-tower-game",
+  "version": "1.0.0",
+  "description": "Jogo da Torre de Hanói em TypeScript puro, sem frameworks.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npx --yes serve ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
