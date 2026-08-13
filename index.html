@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <title>Torre de Hanói</title>
+  <meta name="description" content="Jogo da Torre de Hanói em TypeScript puro, sem frameworks." />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="header">
+      <h1>Torre de Hanói</h1>
+      <p class="subtitle">Mova a pilha inteira do pino da esquerda para o pino da direita, um disco por vez, sem nunca colocar um disco maior sobre um menor.</p>
+    </header>
+
+    <section class="controls">
+      <label class="control">
+        Discos
+        <select id="disk-count"></select>
+      </label>
+      <button id="reset-btn" type="button">Reiniciar</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><span class="stat__label">Movimentos</span><span id="moves" class="stat__value">0</span></div>
+      <div class="stat"><span class="stat__label">Mínimo possível</span><span id="min-moves" class="stat__value">0</span></div>
+      <div class="stat"><span class="stat__label">Recorde</span><span id="best-score" class="stat__value">—</span></div>
+    </section>
+
+    <main id="board" class="board" aria-label="Tabuleiro da Torre de Hanói"></main>
+
+    <p id="message" class="message" role="status">Mova todos os discos para a torre da direita.</p>
+
+    <footer class="footer">
+      <p>Clique em um pino para selecionar o disco do topo, depois clique no pino de destino — ou arraste e solte o disco.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="dist/main.js"></script>
+</body>
+</html>
