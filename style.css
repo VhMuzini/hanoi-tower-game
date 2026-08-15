@@ -206,6 +206,11 @@ button#reset-btn:hover {
   cursor: grabbing;
 }
 
+.disk--flying {
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  cursor: default;
+}
+
 .message {
   text-align: center;
   color: var(--muted);
