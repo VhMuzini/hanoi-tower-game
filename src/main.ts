@@ -17,6 +17,7 @@ const PEG_IDS: PegId[] = [0, 1, 2];
 const MIN_DISKS = 3;
 const MAX_DISKS = 8;
 const STORAGE_KEY = "hanoi-best-scores";
+const FLY_DURATION_MS = 220;
 
 function minMoves(diskCount: number): number {
   return Math.pow(2, diskCount) - 1;
@@ -95,6 +96,7 @@ function localStorageSafe(): Storage | null {
 class HanoiUI {
   private state: GameState;
   private draggingFrom: PegId | null = null;
+  private animating = false;
 
   private readonly boardEl: HTMLElement;
   private readonly movesEl: HTMLElement;
@@ -143,7 +145,7 @@ class HanoiUI {
   }
 
   private handlePegActivate(pegId: PegId): void {
-    if (this.state.won) return;
+    if (this.state.won || this.animating) return;
 
     if (this.state.selectedPeg === null) {
       if (topDisk(this.state.pegs[pegId]) !== undefined) {
@@ -159,17 +161,17 @@ class HanoiUI {
       return;
     }
 
-    if (canMove(this.state, this.state.selectedPeg, pegId)) {
-      this.state = applyMove(this.state, this.state.selectedPeg, pegId);
-      this.state = { ...this.state, selectedPeg: null };
-      this.onAfterMove();
+    const from = this.state.selectedPeg;
+    if (canMove(this.state, from, pegId)) {
+      this.performMove(from, pegId);
+      return;
+    }
+
+    // seleção inválida: troca a seleção para o novo pino, se ele tiver disco
+    if (topDisk(this.state.pegs[pegId]) !== undefined) {
+      this.state = { ...this.state, selectedPeg: pegId };
     } else {
-      // seleção inválida: troca a seleção para o novo pino, se ele tiver disco
-      if (topDisk(this.state.pegs[pegId]) !== undefined) {
-        this.state = { ...this.state, selectedPeg: pegId };
-      } else {
-        this.state = { ...this.state, selectedPeg: null };
-      }
+      this.state = { ...this.state, selectedPeg: null };
     }
     this.render();
   }
@@ -178,6 +180,79 @@ class HanoiUI {
     if (this.state.won) {
       saveBestScore(this.state.diskCount, this.state.moves);
     }
+  }
+
+  /** Aplica um movimento e dispara a animação de voo do disco entre os pinos. */
+  private performMove(from: PegId, to: PegId): void {
+    if (this.animating || !canMove(this.state, from, to)) return;
+
+    const diskSize = topDisk(this.state.pegs[from]);
+    const sourceEl = diskSize !== undefined ? this.findDiskEl(from, diskSize) : null;
+    const startRect = sourceEl ? sourceEl.getBoundingClientRect() : null;
+
+    this.state = applyMove(this.state, from, to);
+    this.state = { ...this.state, selectedPeg: null };
+    this.onAfterMove();
+    this.render();
+
+    if (startRect && diskSize !== undefined) {
+      const targetEl = this.findDiskEl(to, diskSize);
+      if (targetEl) {
+        this.flyDisk(targetEl, startRect);
+      }
+    }
+  }
+
+  private findDiskEl(pegId: PegId, size: number): HTMLElement | null {
+    return this.boardEl.querySelector(`.peg[data-peg="${pegId}"] .disk[data-size="${size}"]`);
+  }
+
+  /** Cria um clone do disco e o anima voando da posição de origem até a posição atual (destino). */
+  private flyDisk(diskEl: HTMLElement, startRect: DOMRect): void {
+    const endRect = diskEl.getBoundingClientRect();
+    const dx = endRect.left - startRect.left;
+    const dy = endRect.top - startRect.top;
+    if (dx === 0 && dy === 0) return;
+
+    this.animating = true;
+    diskEl.style.visibility = "hidden";
+
+    const clone = diskEl.cloneNode(true) as HTMLElement;
+    clone.draggable = false;
+    clone.style.position = "fixed";
+    clone.style.left = `${startRect.left}px`;
+    clone.style.top = `${startRect.top}px`;
+    clone.style.width = `${startRect.width}px`;
+    clone.style.height = `${startRect.height}px`;
+    clone.style.margin = "0";
+    clone.style.visibility = "visible";
+    clone.style.pointerEvents = "none";
+    clone.style.zIndex = "1000";
+    clone.classList.add("disk--flying");
+    document.body.appendChild(clone);
+
+    const peakLift = Math.min(startRect.top, endRect.top) - 46;
+
+    const animation = clone.animate(
+      [
+        { transform: "translate(0px, 0px) scale(1)", offset: 0 },
+        {
+          transform: `translate(${dx / 2}px, ${peakLift - startRect.top}px) scale(1.08)`,
+          offset: 0.55,
+        },
+        { transform: `translate(${dx}px, ${dy}px) scale(1)`, offset: 1 },
+      ],
+      { duration: FLY_DURATION_MS, easing: "cubic-bezier(0.3, 0.7, 0.3, 1)" }
+    );
+
+    const finish = () => {
+      clone.remove();
+      diskEl.style.visibility = "visible";
+      this.animating = false;
+    };
+
+    animation.onfinish = finish;
+    animation.oncancel = finish;
   }
 
   private render(): void {
@@ -229,14 +304,12 @@ class HanoiUI {
       });
       pegEl.addEventListener("drop", (ev) => {
         ev.preventDefault();
+        if (this.animating) return;
         const fromRaw = ev.dataTransfer?.getData("text/plain");
         const from = fromRaw !== undefined && fromRaw !== "" ? (Number(fromRaw) as PegId) : this.draggingFrom;
         if (from === null || from === undefined) return;
         if (canMove(this.state, from, pegId)) {
-          this.state = applyMove(this.state, from, pegId);
-          this.state = { ...this.state, selectedPeg: null };
-          this.onAfterMove();
-          this.render();
+          this.performMove(from, pegId);
         }
       });
 
